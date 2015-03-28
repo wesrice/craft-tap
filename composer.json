@@ -1,0 +1,19 @@
+{
+    "name": "airtype/tap",
+    "description": "An API for Craft CMS",
+    "authors": [
+        {
+            "name": "Wes Rice",
+            "email": "wes@airtype.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Tap\\": "lib/"
+        }
+    },
+    "require": {
+        "league/fractal": "0.11.*",
+        "league/oauth2-server": "~4.1"
+    }
+}
