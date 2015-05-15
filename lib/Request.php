@@ -3,60 +3,140 @@ namespace Tap;
 
 use Craft\Craft;
 use League\Fractal\TransformerAbstract;
+use Tap\Validators\ValidatorAbstract;
 use Tap\Actions\IndexAction;
 use Tap\Actions\ShowAction;
 use Tap\Actions\StoreAction;
 use Tap\Actions\DestroyAction;
 
-class Tap
+class Request
 {
+    /**
+     * Element Type
+     *
+     * @var string
+     */
     protected $elementType;
+
+    /**
+     * Element ID
+     *
+     * @var string
+     */
     protected $elementId;
+
+    /**
+     * Element Action
+     *
+     * @var string
+     */
     protected $elementAction;
+
+    /**
+     * Params
+     *
+     * @var array
+     */
     protected $params = [];
 
+    /**
+     * Request Type
+     *
+     * @var string
+     */
     protected $requestType;
 
-    protected $serializer = '\\League\\Fractal\\Serializer\\DataArraySerializer';
-    protected $transformer;
-    protected $error_transformer;
+    /**
+     * Validator
+     *
+     * @var Tap\Validators\ValidatorAbstract
+     */
     protected $validator;
 
-    public function __construct(array $config = array())
-    {
-        $this->requestType = craft()->request->getRequestType();
+    /**
+     * Results
+     *
+     * @var array
+     */
+    protected $results;
 
-        foreach ($config as $property => $value) {
-            if (property_exists($this, $property)) {
-                $this->$property = $value;
-            }
-        }
+    /**
+     * Constructor
+     */
+    public function __construct()
+    {
+        $this->setRequestType(craft()->request->getRequestType());
 
         $this->setParams(array_merge(craft()->request->getQuery(), craft()->request->getPost()));
+    }
 
-        $transformer = '\\Tap\\Transformers\\'.$this->elementType.'Transformer';
-        $this->setTransformer(new $transformer);
-
-        $this->setErrorTransformer(new \Tap\Transformers\ErrorTransformer);
+    /**
+     * Set Variables
+     *
+     * @param array $variables [description]
+     */
+    public function setVariables(array $variables) {
+        foreach ($variables as $property => $value) {
+            $this->setProperty($property, $value);
+        }
 
         $validator = '\\Tap\\Validators\\'.$this->elementType.'Validator';
         $this->setValidator(new $validator);
     }
 
+    /**
+     * __get Magic Method
+     *
+     * @param string $property Property
+     *
+     * @return mixed Property
+     */
     public function __get($property) {
         if (property_exists($this, $property)) {
             return $this->$property;
         }
     }
 
+    /**
+     * __set Magic Method
+     *
+     * @param string $property Property
+     * @param string $value    Value
+     */
     public function __set($property, $value) {
-        if (property_exists($this, $property)) {
-            $this->$property = $value;
-        }
+        $this->setProperty($property, $value);
 
         return $this;
     }
 
+    /**
+     * Set Request Type
+     *
+     * @param string $requestType Request Type
+     */
+    public function setRequestType($requestType)
+    {
+        $this->requestType = $requestType;
+    }
+
+    /**
+     * Set Property
+     *
+     * @param string $property Property
+     * @param string $value    Value
+     */
+    public function setProperty($property, $value)
+    {
+        if (property_exists($this, $property)) {
+            $this->$property = $value;
+        }
+    }
+
+    /**
+     * Set Params
+     *
+     * @param array $params Params
+     */
     public function setParams(array $params)
     {
         if ($this->elementId) {
@@ -66,21 +146,22 @@ class Tap
         $this->params = array_merge($this->params, $params);
     }
 
-    public function setTransformer(TransformerAbstract $transformer)
-    {
-        $this->transformer = $transformer;
-    }
 
-    public function setErrorTransformer(TransformerAbstract $transformer)
-    {
-        $this->error_transformer = $transformer;
-    }
-
-    public function setValidator($validator)
+    /**
+     * Set Validator
+     *
+     * @param ValidatorAbstract $validator Validator
+     */
+    public function setValidator(ValidatorAbstract $validator)
     {
         $this->validator = $validator;
     }
 
+    /**
+     * Get Config
+     *
+     * @return array Config
+     */
     public function getConfig()
     {
         return [
@@ -91,13 +172,33 @@ class Tap
         ];
     }
 
+    /**
+     * Execute
+     *
+     * @return mixed Results
+     */
     public function execute()
     {
         $action = $this->getAction();
 
-        return $action->execute();
+        $this->results = $action->execute();
     }
 
+    /**
+     * Results
+     *
+     * @return array Results
+     */
+    public function getResults()
+    {
+        return $this->results;
+    }
+
+    /**
+     * Get Action
+     *
+     * @return ActionAbstract Action
+     */
     private function getAction()
     {
         if ($this->requestType === 'GET' && !$this->elementId) {

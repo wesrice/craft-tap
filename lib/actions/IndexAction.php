@@ -8,10 +8,8 @@ class IndexAction extends ActionAbstract
 {
     public function run()
     {
-        $criteria = craft()->elements->getCriteria($this->elementType, $this->params);
+        $criteria = craft()->elements->getCriteria($this->request->elementType, $this->request->params);
 
-        $elements = $criteria->find();
-
-        return new Collection($elements, $this->transformer);
+        return $criteria->find();
     }
 }

@@ -6,22 +6,26 @@ use Craft\Craft;
 
 class EntryValidator extends ValidatorAbstract
 {
+    /**
+     * Validate
+     *
+     * @return void
+     */
     public function validate()
     {
-        $this->validateModel();
+        parent::validate();
+
         $this->hasSectionId();
     }
 
-    private function validateModel()
-    {
-        $attributes = $this->element->getAttributes();
-
-        return $this->element->validate($attributes);
-    }
-
+    /**
+     * Has Section ID
+     *
+     * @return boolean
+     */
     private function hasSectionId() {
-        if (!in_array('sectionId', $this->element->attributeNames())) {
-            return $this->addError('The `sectionId` is required.');
+        if (!$this->model->getAttribute('sectionId')) {
+            $this->addError('The `sectionId` is required.');
         }
     }
 }

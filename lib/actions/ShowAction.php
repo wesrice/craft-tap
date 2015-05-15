@@ -8,10 +8,8 @@ class ShowAction extends ActionAbstract
 {
     public function run()
     {
-        $criteria = craft()->elements->getCriteria($this->elementType, $this->params);
+        $criteria = craft()->elements->getCriteria($this->request->elementType, $this->request->params);
 
-        $element = $criteria->first();
-
-        return new Item($element, $this->transformer);
+        return $criteria->first();
     }
 }

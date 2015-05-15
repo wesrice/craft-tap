@@ -10,24 +10,10 @@ class StoreAction extends ActionAbstract
 {
     public function run()
     {
-        $this->setModelAttributes($this->params);
+        $model = $this->getModel();
 
-        $element = $this->getModel();
+        $this->saveElement($model);
 
-        if ($errors = $this->validateElement($element)) {
-            return new Item((object) $errors, $this->error_transformer);
-        }
-
-        $element_type = $this->getElementType();
-
-        try {
-            if (!$element_type->saveElement($element, null)) {
-                throw new Exception('Element could not be saved.');
-            }
-        } catch (Exception $exception) {
-           return new Item((object) [$exception->getMessage()], $this->error_transformer);
-        }
-
-        return new Item($element, $this->transformer);
+        return new Item($this->model, $this->transformer);
     }
 }

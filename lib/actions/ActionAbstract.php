@@ -1,40 +1,25 @@
 <?php
 namespace Tap\Actions;
 
-use Tap\Tap;
+use Tap\Request;
 use League\Fractal\Manager;
 use Craft\Craft;
 use Craft\Exception;
 use Craft\BaseElementModel;
+use Craft\BaseRecord;
 
 abstract class ActionAbstract
 {
-    protected $requestType;
-    protected $elementType;
-    protected $elementId;
-    protected $elementAction;
-    protected $params;
-    protected $transformer;
-    protected $error_transformer;
-    protected $serializer;
-    protected $validator;
+    protected $request;
 
     protected $model;
     protected $record;
     protected $attributes = [];
     protected $fields = [];
 
-    public function __construct(Tap $tap)
+    public function __construct(Request $request)
     {
-        $this->requestType       = $tap->requestType;
-        $this->elementType       = $tap->elementType;
-        $this->elementId         = $tap->elementId;
-        $this->elementAction     = $tap->elementAction;
-        $this->params            = $tap->params;
-        $this->transformer       = $tap->transformer;
-        $this->error_transformer = $tap->error_transformer;
-        $this->serializer        = $tap->serializer;
-        $this->validator         = $tap->validator;
+        $this->request = $request;
 
         $this->setModel();
         $this->setRecord();
@@ -45,20 +30,15 @@ abstract class ActionAbstract
 
     public function execute()
     {
-        $manager = new Manager();
-        $manager->setSerializer(new $this->serializer);
-
-        $results = $this->run();
-
-        return $manager->createData($results)->toArray();
+        return $this->run();
     }
 
     private function setModel()
     {
-        if ($this->elementId) {
-            $model = craft()->elements->getElementById($this->elementId, $this->elementType);
+        if ($this->request->elementId) {
+            $model = craft()->elements->getElementById($this->request->elementId, $this->request->elementType);
         } else {
-            $model_class = '\\Craft\\'.$this->elementType.'Model';
+            $model_class = '\\Craft\\'.$this->request->elementType.'Model';
             $model = new $model_class();
         }
 
@@ -74,16 +54,9 @@ abstract class ActionAbstract
         return $this->model;
     }
 
-    public function setModelAttributes(array $properties)
-    {
-        foreach ($properties as $key => $value) {
-            $this->model->setAttribute($key, $value);
-        }
-    }
-
     private function setRecord()
     {
-        $record_class = '\\Craft\\'.$this->elementType.'Record';
+        $record_class = '\\Craft\\'.$this->request->elementType.'Record';
 
         if ($this->model->id) {
             $record = $record_class::model()->findById($this->model->id);
@@ -103,45 +76,51 @@ abstract class ActionAbstract
         return $this->record;
     }
 
+    public function setAttributes($object, array $attributes)
+    {
+        foreach ($attributes as $key => $value) {
+            $object->setAttribute($key, $value);
+        }
+
+        return $object;
+    }
+
     public function getElementType()
     {
-        $element_type_class = '\\Craft\\'.$this->elementType.'ElementType';
+        $element_type_class = '\\Craft\\'.$this->request->elementType.'ElementType';
         return new $element_type_class;
     }
 
-    public function validateElement(BaseElementModel $element)
+    public function validate(BaseElementModel $model)
     {
-        $this->validator->setElement($element);
-        $this->validator->validate();
+        $this->request->validator->setModel($model);
 
-        if ($this->validator->hasErrors()) {
-            return $this->validator->getErrors();
-        }
-
-        return null;
+        $this->request->validator->validate();
     }
 
-    // public function saveElement(BaseElementModel $element)
-    // {
-    //     $this->validator->setElement($element);
-    //     $this->validator->validate();
+    public function saveElement(BaseElementModel $model)
+    {
+        $this->validate($model);
 
-    //     if ($this->validator->hasErrors()) {
-    //         return $this->validator->getErrors();
-    //     }
+        if ($this->request->validator->hasErrors()) {
+            throw new Exception('There are errors.');
+        }
 
-    //     $element_type = $this->getElementType();
-    //     return $element_type->saveElement($element, null);
-    // }
+        $element_type = $this->getElementType();
+
+        if (!$element_type->saveElement($this->model, null)) {
+            throw new Exception('Element could not be saved.');
+        }
+    }
 
     private function setAttributesAndFields()
     {
-        if (isset($this->params['fields'])) {
+        if (isset($this->request->params['fields'])) {
             $this->fields = $this->params['fields'];
-            unset($this->params['fields']);
+            unset($this->request->params['fields']);
         }
 
-        $this->attributes = $this->params;
+        $this->attributes = $this->request->params;
     }
 
 }
