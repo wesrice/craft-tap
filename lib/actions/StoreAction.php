@@ -4,18 +4,30 @@ namespace Tap\Actions;
 use Craft\Craft;
 use Craft\ElementRecord;
 use League\Fractal\Resource\Item;
+use Craft\Exception;
 
 class StoreAction extends ActionAbstract
 {
     public function run()
     {
-        $record = $this->getRecord();
-        $model = $this->getModel();
+        $this->setModelAttributes($this->params);
 
-        $model->validate();
+        $element = $this->getModel();
 
-        Craft::dd($model->getErrors());
+        if ($errors = $this->validateElement($element)) {
+            return new Item((object) $errors, $this->error_transformer);
+        }
 
-        return '';
+        $element_type = $this->getElementType();
+
+        try {
+            if (!$element_type->saveElement($element, null)) {
+                throw new Exception('Element could not be saved.');
+            }
+        } catch (Exception $exception) {
+           return new Item((object) [$exception->getMessage()], $this->error_transformer);
+        }
+
+        return new Item($element, $this->transformer);
     }
 }

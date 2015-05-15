@@ -19,6 +19,8 @@ class Tap
 
     protected $serializer = '\\League\\Fractal\\Serializer\\DataArraySerializer';
     protected $transformer;
+    protected $error_transformer;
+    protected $validator;
 
     public function __construct(array $config = array())
     {
@@ -30,10 +32,15 @@ class Tap
             }
         }
 
-        $this->setParams(craft()->request->getQuery());
+        $this->setParams(array_merge(craft()->request->getQuery(), craft()->request->getPost()));
 
         $transformer = '\\Tap\\Transformers\\'.$this->elementType.'Transformer';
         $this->setTransformer(new $transformer);
+
+        $this->setErrorTransformer(new \Tap\Transformers\ErrorTransformer);
+
+        $validator = '\\Tap\\Validators\\'.$this->elementType.'Validator';
+        $this->setValidator(new $validator);
     }
 
     public function __get($property) {
@@ -62,6 +69,16 @@ class Tap
     public function setTransformer(TransformerAbstract $transformer)
     {
         $this->transformer = $transformer;
+    }
+
+    public function setErrorTransformer(TransformerAbstract $transformer)
+    {
+        $this->error_transformer = $transformer;
+    }
+
+    public function setValidator($validator)
+    {
+        $this->validator = $validator;
     }
 
     public function getConfig()
