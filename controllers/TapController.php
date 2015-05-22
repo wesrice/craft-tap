@@ -2,6 +2,7 @@
 namespace Craft;
 
 use Tap\Request;
+use \CDbException;
 use Tap\Response;
 
 class TapController extends BaseController
@@ -22,16 +23,16 @@ class TapController extends BaseController
      */
     public function actionTap(array $variables = array())
     {
-        unset($variables['matches']);
-
         $request = new Request();
-        $request->setVariables($variables);
-        $request->execute();
+        $response = new Response();
 
-        $response = new Response($request);
-        $response->execute();
-        $results = $response->getResults();
+        try {
+            $request->handle();
+            $response->setRequest($request);
+        } catch(CDbException $exception) {
+            $response->respondWithError(500, 'CDbException', 'Something is wrong.');
+        }
 
-        $this->returnJson($results);
+        $response->send();
     }
 }
