@@ -9,11 +9,10 @@
     ],
     "autoload": {
         "psr-4": {
-            "Tap\\": "lib/"
+            "Tap\\": "src/"
         }
     },
     "require": {
-        "league/fractal": "0.11.*",
-        "league/oauth2-server": "~4.1"
+        "ellipsesynergie/api-response": "0.10.0"
     }
 }
