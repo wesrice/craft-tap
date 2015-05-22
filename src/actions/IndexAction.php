@@ -2,7 +2,9 @@
 namespace Tap\Actions;
 
 use Craft\Craft;
+use Tap\Helpers\PaginationHelper;
 use League\Fractal\Resource\Collection;
+
 
 class IndexAction extends ActionAbstract
 {
@@ -10,6 +12,8 @@ class IndexAction extends ActionAbstract
     {
         $criteria = craft()->elements->getCriteria($this->request->elementType, $this->request->params);
 
-        return $criteria->find();
+        $results = PaginationHelper::paginateCriteria($criteria);
+
+        return $results;
     }
 }

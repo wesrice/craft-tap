@@ -65,6 +65,10 @@ class Request
      */
     public function __construct()
     {
+        $variables = craft()->urlManager->getRouteParams()['variables'];
+        unset($variables['matches']);
+        $this->setVariables($variables);
+
         $this->setRequestType(craft()->request->getRequestType());
 
         $this->setParams(array_merge(craft()->request->getQuery(), craft()->request->getPost()));
@@ -173,11 +177,11 @@ class Request
     }
 
     /**
-     * Execute
+     * Handle
      *
      * @return mixed Results
      */
-    public function execute()
+    public function handle()
     {
         $action = $this->getAction();
 
